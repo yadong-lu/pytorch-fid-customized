@@ -231,15 +231,19 @@ def calculate_activation_statistics(files, model, batch_size=50, dims=2048,
     return mu, sigma
 
 
-def compute_statistics_of_path(path, model, batch_size, dims, device,
+def compute_statistics_of_path(path, common_files, model, batch_size, dims, device,
                                num_workers=1):
     if path.endswith('.npz'):
         with np.load(path) as f:
             m, s = f['mu'][:], f['sigma'][:]
     else:
         path = pathlib.Path(path)
-        files = sorted([file for ext in IMAGE_EXTENSIONS
-                       for file in path.glob('*.{}'.format(ext))])
+        if not common_files:
+            files = sorted([file for ext in IMAGE_EXTENSIONS
+                        for file in path.glob('*.{}'.format(ext))])
+        else:
+            files = common_files
+        print('Computing FID statistics for {} images in {}'.format(len(files), path))
         m, s = calculate_activation_statistics(files, model, batch_size,
                                                dims, device, num_workers)
 
@@ -255,10 +259,18 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
 
     model = InceptionV3([block_idx]).to(device)
-
-    m1, s1 = compute_statistics_of_path(paths[0], model, batch_size,
+    # get common files from path[0] and path[1]
+    path0 = pathlib.Path(paths[0])
+    path1 = pathlib.Path(paths[1])
+    files0 = sorted([file for ext in IMAGE_EXTENSIONS
+                    for file in path0.glob('*.{}'.format(ext))])
+    files1 = sorted([file for ext in IMAGE_EXTENSIONS
+                    for file in path1.glob('*.{}'.format(ext))])    
+    common_files = list(set(files0).intersection(files1))
+    # calculate FID
+    m1, s1 = compute_statistics_of_path(paths[0], common_files, model, batch_size,
                                         dims, device, num_workers)
-    m2, s2 = compute_statistics_of_path(paths[1], model, batch_size,
+    m2, s2 = compute_statistics_of_path(paths[1], common_files, model, batch_size,
                                         dims, device, num_workers)
     fid_value = calculate_frechet_distance(m1, s1, m2, s2)
 
@@ -320,3 +332,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    
