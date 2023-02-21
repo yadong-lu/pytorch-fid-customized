@@ -242,8 +242,9 @@ def compute_statistics_of_path(path, common_files, model, batch_size, dims, devi
             files = sorted([file for ext in IMAGE_EXTENSIONS
                         for file in path.glob('*.{}'.format(ext))])
         else:
-            print('Using common files')
-            files = common_files
+            files = sorted([file for ext in IMAGE_EXTENSIONS
+                        for file in path.glob('*.{}'.format(ext))
+                        if file.stem in common_files])
         print('Computing FID statistics for {} images in {}'.format(len(files), path))
         m, s = calculate_activation_statistics(files, model, batch_size,
                                                dims, device, num_workers)
@@ -263,10 +264,11 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     # get common files from path[0] and path[1]
     path0 = pathlib.Path(paths[0])
     path1 = pathlib.Path(paths[1])
-    files0 = sorted([file for ext in IMAGE_EXTENSIONS
+    files0 = sorted([file.stem for ext in IMAGE_EXTENSIONS
                     for file in path0.glob('*.{}'.format(ext))])
-    files1 = sorted([file for ext in IMAGE_EXTENSIONS
-                    for file in path1.glob('*.{}'.format(ext))])    
+    files1 = sorted([file.stem for ext in IMAGE_EXTENSIONS
+                    for file in path1.glob('*.{}'.format(ext))])
+    
     common_files = list(set(files0).intersection(files1))
     print('len common_files', len(common_files))
     # calculate FID
