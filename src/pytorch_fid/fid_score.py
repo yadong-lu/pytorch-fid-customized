@@ -84,7 +84,12 @@ class ImagePathDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, i):
         path = self.files[i]
-        img = Image.open(path).convert('RGB')
+        # open image with exception, to print the path
+        try:
+            img = Image.open(path).convert('RGB')
+        except Exception as e:
+            print('Error reading image: ' + path)
+            raise e
         if self.transforms is not None:
             img = self.transforms(img)
         return img
