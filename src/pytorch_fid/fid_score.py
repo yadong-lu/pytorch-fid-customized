@@ -88,7 +88,7 @@ class ImagePathDataset(torch.utils.data.Dataset):
         try:
             img = Image.open(path).convert('RGB')
         except Exception as e:
-            print('Error reading image: ' + path)
+            print(path)
             raise e
         if self.transforms is not None:
             img = self.transforms(img)
